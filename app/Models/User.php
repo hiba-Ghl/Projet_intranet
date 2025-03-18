@@ -12,24 +12,18 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    protected $table = 'utilisateurs'; // Change `users` en `utilisateurs`
+    protected $primaryKey = 'IDUtilisateur'; // Indique la clé primaire personnalisée
     protected $fillable = [
-        'name',
-        'email',
-        'password',
+        'Nom',
+        'Email',
+        'Mot_de_passe',
+        'Role',
+        'DateInscription',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
-        'password',
+        'Mot_de_passe',
         'remember_token',
     ];
 
@@ -38,11 +32,9 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+
+     public function getAuthPassword()
+     {
+         return $this->Mot_de_passe; // Laravel s'attend à un champ `password`, on adapte
+     }
 }
