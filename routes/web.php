@@ -8,6 +8,7 @@ Route::resource('annonces', HomeController::class);
 
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/chat', [ChatController::class, 'index']);
 Route::post('/annonces', [HomeController::class, 'store']);  // Route pour enregistrer une annonce
 Route::get('/logout', function () {
     auth()->logout();
