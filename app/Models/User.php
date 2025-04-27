@@ -12,18 +12,18 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    protected $table = 'utilisateurs'; // Change `users` en `utilisateurs`
-    protected $primaryKey = 'IDUtilisateur'; // Indique la clé primaire personnalisée
+    protected $table = 'utilisateurs';
+    protected $primaryKey = 'IDUtilisateur';
     protected $fillable = [
-        'Nom',
-        'Email',
-        'Mot_de_passe',
-        'Role',
-        'DateInscription',
+        'nom',
+        'email',
+        'mot_de_passe',
+        'role',
+        'date_inscription',
     ];
 
     protected $hidden = [
-        'Mot_de_passe',
+        'mot_de_passe',
         'remember_token',
     ];
 
@@ -33,8 +33,33 @@ class User extends Authenticatable
      * @return array<string, string>
      */
 
-     public function getAuthPassword()
-     {
-         return $this->Mot_de_passe; // Laravel s'attend à un champ `password`, on adapte
-     }
+    /**
+     * Get the password for the user.
+     *
+     * @return string
+     */
+    public function getAuthPassword()
+    {
+        return $this->mot_de_passe;
+    }
+
+    /**
+     * Get the name of the password field.
+     *
+     * @return string
+     */
+    public function getPasswordName()
+    {
+        return 'password';
+    }
+
+    /**
+     * Get the password for the user.
+     *
+     * @return string
+     */
+    public function getPasswordAttribute()
+    {
+        return $this->mot_de_passe;
+    }
 }

@@ -12,27 +12,32 @@
             <div class="font-semibold mb-2">Recent Chats</div>
             <div class="space-y-4">
             @foreach ($discussions as $discussion)
-    <div class="flex items-center justify-between cursor-pointer" onclick="loadDiscussionMessages({{ $discussion->IDdiscussion }})">
-        <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-yellow-200 rounded-full"></div>
-            <div>
-                <div class="font-medium">{{ $discussion->titre }}</div>
-                <div class="text-xs text-gray-500">
-                    Last message: {{ $discussion->messages->last()->contenu ?? 'No messages' }}
+                <div class="flex items-center justify-between cursor-pointer hover:bg-gray-100 p-2 rounded" 
+                     onclick="loadDiscussionMessages({{ $discussion->IDdiscussion }})">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-yellow-200 rounded-full flex items-center justify-center">
+                            <span class="text-yellow-800 font-semibold">{{ substr($discussion->titre, 0, 2) }}</span>
+                        </div>
+                        <div>
+                            <div class="font-medium">{{ $discussion->titre }}</div>
+                            <div class="text-xs text-gray-500">
+                                Last message: {{ $discussion->messages->last()->contenu ?? 'No messages' }}
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
-@endforeach
+            @endforeach
             </div>
         </div>
     </div>
 
     <!-- Chat Window -->
     <div class="w-3/4 flex flex-col bg-gray-50">
-        <div class="border-b p-4 flex items-center justify-between">
+        <div class="border-b p-4 flex items-center justify-between bg-white">
             <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-purple-400 rounded-full"></div>
+                <div class="w-10 h-10 bg-purple-400 rounded-full flex items-center justify-center">
+                    <span class="text-white font-semibold" id="discussion-initial"></span>
+                </div>
                 <div>
                     <div class="font-semibold" id="discussion-title">No Discussions</div>
                     <div class="text-xs text-gray-500">Select a discussion to see messages</div>
@@ -40,19 +45,18 @@
             </div>
         </div>
 
-        <div id="messages" class="flex-1 p-6 overflow-y-auto">
+        <div id="messages" class="flex-1 p-6 overflow-y-auto space-y-4">
             <!-- Messages will be loaded here dynamically -->
         </div>
 
-        <div class="p-4 border-t">
+        <div class="p-4 border-t bg-white">
             <div class="flex items-center space-x-2">
                 <input type="text" id="message-input" placeholder="Type Your Message"
-                       class="flex-1 p-2 border rounded">
-                <button class="p-2 bg-purple-600 text-white rounded" onclick="sendMessage(currentDiscussionId)">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
-                         viewBox="0 0 24 24">
-                        <path d="M5 13l4 4L19 7"/>
-                    </svg>
+                       class="flex-1 p-2 border rounded focus:outline-none focus:border-purple-500"
+                       onkeypress="if(event.key === 'Enter') sendMessage(currentDiscussionId)">
+                <button class="p-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+                        onclick="sendMessage(currentDiscussionId)">
+                    Send
                 </button>
             </div>
         </div>
@@ -61,17 +65,14 @@
 @endsection
 
 <script>
-// Global variable to store the current discussion ID
 let currentDiscussionId = null;
+const currentUserId = {{ auth()->id() }};
 
 function loadDiscussionMessages(discussionId) {
-    currentDiscussionId = discussionId;  // Set the current discussion ID globally
-
-    // Clear the current messages
+    currentDiscussionId = discussionId;
     const messagesDiv = document.getElementById('messages');
     messagesDiv.innerHTML = '<div class="text-center text-gray-500">Loading messages...</div>';
 
-    // Fetch the messages for the selected discussion
     fetch(`/chat/messages/${discussionId}`)
         .then(response => response.json())
         .then(data => {
@@ -80,26 +81,39 @@ function loadDiscussionMessages(discussionId) {
                 return;
             }
 
-            // Update the discussion title and status
             document.getElementById('discussion-title').textContent = data.titre;
+            document.getElementById('discussion-initial').textContent = data.titre.substring(0, 2).toUpperCase();
 
-            // Clear the messages div and append the new messages
-            messagesDiv.innerHTML = '';  // Clear current messages
+            messagesDiv.innerHTML = '';
 
             if (data.messages.length === 0) {
                 messagesDiv.innerHTML = '<div class="text-center text-gray-500">No messages yet</div>';
             } else {
                 data.messages.forEach(message => {
+                    const isCurrentUser = message.auteur === currentUserId;
                     const messageDiv = document.createElement('div');
                     messageDiv.classList.add('mb-4');
+                    
                     messageDiv.innerHTML = `
-                        <div class="text-sm text-gray-600">${message.created_at}</div>
-                        <div class="bg-gray-200 p-3 rounded w-max mt-1">
-                            ${message.contenu}
+                        <div class="flex ${isCurrentUser ? 'justify-end' : 'justify-start'}">
+                            <div class="max-w-[70%]">
+                                <div class="text-xs text-gray-500 ${isCurrentUser ? 'text-right' : 'text-left'} mb-1">
+                                    ${message.created_at}
+                                </div>
+                                <div class="${isCurrentUser 
+                                    ? 'bg-purple-600 text-white' 
+                                    : 'bg-gray-200 text-gray-800'} 
+                                    p-3 rounded-lg shadow-sm">
+                                    ${message.contenu}
+                                </div>
+                            </div>
                         </div>
                     `;
                     messagesDiv.appendChild(messageDiv);
                 });
+                
+                // Scroll to the bottom of the messages
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
         })
         .catch(error => {
@@ -108,20 +122,22 @@ function loadDiscussionMessages(discussionId) {
         });
 }
 
-
-
 function sendMessage(discussionId) {
-    const messageContent = document.getElementById('message-input').value;
+    const messageInput = document.getElementById('message-input');
+    const messageContent = messageInput.value;
+
+    if (!discussionId) {
+        alert('Please select a discussion first.');
+        return;
+    }
 
     if (messageContent.trim() === '') {
         alert('Message content cannot be empty.');
         return;
     }
 
-    // Clear the input after checking
-    document.getElementById('message-input').value = '';
+    messageInput.value = '';
 
-    // Send the new message to the backend
     fetch(`/chat/messages/${discussionId}`, {
         method: 'POST',
         headers: {
@@ -135,15 +151,23 @@ function sendMessage(discussionId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Dynamically add the new message to the chat window
             const messagesDiv = document.getElementById('messages');
             const messageDiv = document.createElement('div');
             messageDiv.classList.add('mb-4');
             messageDiv.innerHTML = `
-                <div class="text-sm text-gray-600">${new Date().toLocaleTimeString()}</div>
-                <div class="bg-gray-200 p-3 rounded w-max mt-1">${messageContent}</div>
+                <div class="flex justify-end">
+                    <div class="max-w-[70%]">
+                        <div class="text-xs text-gray-500 text-right mb-1">
+                            ${data.message.created_at}
+                        </div>
+                        <div class="bg-purple-600 text-white p-3 rounded-lg shadow-sm">
+                            ${messageContent}
+                        </div>
+                    </div>
+                </div>
             `;
             messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         } else {
             alert('Error sending message');
         }
@@ -153,5 +177,4 @@ function sendMessage(discussionId) {
         alert('Error sending message');
     });
 }
-
 </script>
