@@ -89,7 +89,7 @@
                             <a class="nav-link active" href="#">Annonces</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">Chats</a>
+                            <a class="nav-link" href="/chat">Chats</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#">Forum</a>
