@@ -15,6 +15,16 @@ class HomeController extends Controller
         // Retourner la vue avec les annonces
         return view('home', compact('annonces'));
     }
+    public function search(Request $request)
+    {
+        $query = $request->input('query');
+        $annonces = Annonce::where('titre', 'like', "%$query%")
+                        ->orWhere('description', 'like', "%$query%")
+                        ->get();
+
+        return view('home', compact('annonces'));
+    }
+
 
     public function store(Request $request)
 {
@@ -38,6 +48,26 @@ class HomeController extends Controller
     ]);
 
     return redirect()->route('home');
-}
+    }
+    public function create()
+    {
+        return view('create-annonce');
+    }
+
+    public function destroy($id)
+    {
+        $annonce = Annonce::findOrFail($id);
+
+        // Supprimer l'image associée si elle existe
+        if ($annonce->image_path) {
+            Storage::disk('public')->delete($annonce->image_path);
+        }
+
+        // Supprimer l'annonce
+        $annonce->delete();
+
+        return redirect()->route('home')->with('success', 'Annonce supprimée avec succès.');
+    }
+
 
 }
